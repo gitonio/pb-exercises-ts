@@ -1,0 +1,29 @@
+{
+  "name": "pb-exercises-ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start:build": "tsc -w",
+    "start:run": "nodemon build/index.js",
+    "start": "concurrently npm:start:*",
+    "test": "mocha -r ts-node/register src/session3/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^12.12.14",
+    "concurrently": "^5.0.0",
+    "hash.js": "^1.1.7",
+    "nodemon": "^2.0.1",
+    "typescript": "^3.7.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.6",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.2",
+    "ts-node": "^8.5.4"
+  }
+}
