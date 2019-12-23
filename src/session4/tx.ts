@@ -36,7 +36,14 @@ export class TxFetcher {
 	}
 
 	loadCache( filename: string): void {
-		const diskCache = 
+		const diskCache = JSON.parse(fs.readFileSync('tx.cache')) as {txId: string, rawHex: string}[];
+		let readable = new Readable();
+		
+		diskCache.map(obj => {
+			readable.push(Buffer.from(obj.rawHex ,'hex'))
+			readable.push(null)
+			this.cache.push( {"txId": obj.txId, "rawHex": Tx.parse(readable)})
+		})
 	}
 
 }
