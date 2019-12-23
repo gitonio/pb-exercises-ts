@@ -7,7 +7,7 @@
     "start:build": "tsc -w",
     "start:run": "nodemon build/index.js",
     "start": "concurrently npm:start:*",
-    "test": "mocha -r ts-node/register src/session3/*.test.ts"
+    "test": "mocha -r ts-node/register src/session4/*.test.ts"
   },
   "keywords": [],
   "author": "",
