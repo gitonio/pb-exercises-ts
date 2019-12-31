@@ -3,7 +3,8 @@ var helper = require('./helper');
 import {
   decodeBase58,
   encodeBase58Checksum,
-  h160ToP2pkhAddress
+  h160ToP2pkhAddress,
+  h160ToP2shAddress
 } from './helper';
 
 describe('bytes', function() {
@@ -86,11 +87,34 @@ describe('test_base58', function() {
   });
 });
 describe('test_p2pkh_address', function() {
-  it('1', function() {
+  it('works for mainnet', function() {
     const h160 = Buffer.from('74d691da1574e6b3c192ecfb52cc8984ee7b6c56', 'hex');
     assert.equal(
       h160ToP2pkhAddress(h160, false),
       '1BenRpVUFK65JFWcQSuHnJKzc4M8ZP8Eqa'
+    );
+  });
+  it('works for testnet', function() {
+    const h160 = Buffer.from('74d691da1574e6b3c192ecfb52cc8984ee7b6c56', 'hex');
+    assert.equal(
+      h160ToP2pkhAddress(h160, true),
+      'mrAjisaT4LXL5MzE81sfcDYKU3wqWSvf9q'
+    );
+  });
+});
+describe('test_p2sh_address', function() {
+  it('works for mainnet', function() {
+    const h160 = Buffer.from('74d691da1574e6b3c192ecfb52cc8984ee7b6c56', 'hex');
+    assert.equal(
+      h160ToP2shAddress(h160, false),
+      '3CLoMMyuoDQTPRD3XYZtCvgvkadrAdvdXh'
+    );
+  });
+  it('works for testnet', function() {
+    const h160 = Buffer.from('74d691da1574e6b3c192ecfb52cc8984ee7b6c56', 'hex');
+    assert.equal(
+      h160ToP2shAddress(h160, true),
+      '2N3u1R6uwQfuobCqbCgBkpsgBxvr1tZpe7B'
     );
   });
 });

@@ -173,27 +173,28 @@ export class Tx {
     const s256 = helper.doubleSha256(Buffer.from(s));
     return BigInt('0x' + s256);
   }
+
+  verifyInput(inputIndex: number): boolean {
+    const txIn = this.inputs[inputIndex];
+    //const point = ecc.S256Point.parse(txIn.secPubkey());
+    //const signature = ecc.Signature.parse(txIn.derSignature());
+    //const hashType = txIn.hashType();
+    const z = this.sigHash(inputIndex);
+    const combinedScript = txIn.scriptSig + txIn.scriptPubkey(this.testnet);
+    return combinedScript.evaluate(z);
+  }
+
+  signInput(inputIndex, privateKey, hashType) {
+    const z = this.sigHash(inputIndex, hashType);
+    const der = privateKey.sign(z).der();
+    const sig = Buffer.concat([der, Buffer.from([hashType])]);
+    const sec = privateKey.point.sec();
+    const ss = [sig, sec];
+    const scriptSig = new script.Script(ss);
+    this.inputs[inputIndex].scriptSig = scriptSig;
+    return this.verifyInput(inputIndex);
+  }
   /*
-	verifyInput(inputIndex) {
-		const txIn = this.inputs[inputIndex];
-		const point = ecc.S256Point.parse(txIn.secPubkey());
-		const signature = ecc.Signature.parse(txIn.derSignature());
-		const hashType = txIn.hashType();
-		const z = this.sigHash(inputIndex, hashType);
-		return point.verify(z, signature);
-	}
-
-	signInput(inputIndex, privateKey, hashType) {
-		const z = this.sigHash(inputIndex,hashType);
-		const der = privateKey.sign(z).der();
-		const sig = Buffer.concat([der, Buffer.from([hashType])])
-		const sec = privateKey.point.sec();
-		const ss = [sig,sec]
-		const scriptSig = new script.Script(ss)
-		this.inputs[inputIndex].scriptSig = scriptSig;
-		return this.verifyInput(inputIndex);
-	}
-
 	isCoinbase() {
 		if (this.inputs.length != 1) {
 			return false;

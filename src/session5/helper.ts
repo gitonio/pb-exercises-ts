@@ -49,7 +49,7 @@ function intToLittleEndian(n: number, length: number): Buffer {
 }
 
 function intToBigEndian(n: number | bigint): Buffer {
-  const pref = n < 16 ? '0' : '';
+  const pref = n.toString(16).length % 2 == 0 ? '' : '0';
   return Buffer.from(pref + n.toString(16), 'hex');
 }
 
@@ -182,8 +182,15 @@ export function decodeBase58(s: string): Buffer {
     num = num + BigInt(ba.indexOf(sb[index]));
   }
   //	let combined = new BN(num).toBuffer('be');
-  const combined = intToBigEndian(num);
-  const l = Buffer.byteLength(combined);
+  let combined = intToBigEndian(num);
+  let l = Buffer.byteLength(combined);
+  if (l == 24) {
+    //combined = Buffer.concat([combined, Buffer.from([0x00])]);
+    console.log('inif');
+    combined = Buffer.concat([Buffer.from([0x00]), combined]);
+  }
+  l = Buffer.byteLength(combined);
+  console.log(s, s.length, l, combined.toString('hex'), num);
   const checksum = combined.slice(l - 4, l);
   const res = doubleSha256(combined.slice(0, l - 4));
 
@@ -197,13 +204,12 @@ export function decodeBase58(s: string): Buffer {
 
 export function h160ToP2pkhAddress(h160: Buffer, testnet = false): string {
   const prefix = testnet ? Buffer.from([0x6f]) : Buffer.from([0x00]);
-  console.log(Buffer.concat([prefix, h160]));
-  return encodeBase58(Buffer.concat([prefix, h160]));
+  return encodeBase58Checksum(Buffer.concat([prefix, h160]));
 }
 
 export function h160ToP2shAddress(h160: Buffer, testnet = false): string {
   const prefix = testnet ? Buffer.from([0xc4]) : Buffer.from([0x05]);
-  return encodeBase58(Buffer.concat([prefix, h160]));
+  return encodeBase58Checksum(Buffer.concat([prefix, h160]));
 }
 
 const BASE58_ALPHABET =

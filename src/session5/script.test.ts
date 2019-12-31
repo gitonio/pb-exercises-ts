@@ -1,6 +1,6 @@
 var { assert, expect } = require('chai');
 import { Tx } from './tx';
-import { Script, p2pkhScript } from './script';
+import { Script, p2pkhScript, p2shScript } from './script';
 var Readable = require('stream').Readable;
 var ecc = require('./ecc');
 var helper = require('./helper');
@@ -58,10 +58,21 @@ describe('ScriptTest', function() {
   it('test_address', function() {
     const address1 = '1BenRpVUFK65JFWcQSuHnJKzc4M8ZP8Eqa';
     //const address1 = 'mnrVtF8DWjMu839VW3rBfgYaAfKk8983Xf';
-    const h160 = decodeBase58(address1);
-    console.log(h160.toString('hex'));
+    let h160 = decodeBase58(address1);
+    //console.log(h160.toString('hex'));
     const p2pkhScriptPubkey = p2pkhScript(h160);
-    console.log(p2pkhScriptPubkey);
+    //console.log(p2pkhScriptPubkey);
     assert.equal(p2pkhScriptPubkey.address(), address1);
+
+    const address2 = 'mrAjisaT4LXL5MzE81sfcDYKU3wqWSvf9q';
+    assert.equal(p2pkhScriptPubkey.address(true), address2);
+
+    const address3 = '3CLoMMyuoDQTPRD3XYZtCvgvkadrAdvdXh';
+    h160 = decodeBase58(address3);
+    const p2shScriptPubkey = p2shScript(h160);
+    assert.equal(p2shScriptPubkey.address(), address3);
+
+    const address4 = '2N3u1R6uwQfuobCqbCgBkpsgBxvr1tZpe7B';
+    assert.equal(p2shScriptPubkey.address(true), address4);
   });
 });

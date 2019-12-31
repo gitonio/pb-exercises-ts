@@ -456,7 +456,7 @@ describe('S256Test', function() {
 describe('signature', function() {
   const testCases = [
     { r: 1, s: 2 },
-    { r: Math.floor(Math.random() * 10), s: Math.floor(Math.random() * 10) },
+    { r: Math.floor(Math.random() * 100), s: Math.floor(Math.random() * 100) },
     { r: Math.floor(Math.random() * 10), s: Math.floor(Math.random() * 10) }
   ];
 
@@ -474,7 +474,7 @@ describe('signature', function() {
 describe('PrivateKeyTest', function() {
   it('test_sign', function() {
     const pk = new PrivateKey(BigInt(Math.floor(Math.random() * 10)));
-    const z = BigInt(Math.floor(Math.random() * 10))
+    const z = BigInt(Math.floor(Math.random() * 10));
     const sig = pk.sign(z);
     assert.ok(pk.point.verify(z, sig));
   });

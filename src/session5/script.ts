@@ -153,6 +153,9 @@ export class Script {
     return new Script(elements);
   }
 
+  add(s: Script): Script {
+    return new Script(this.elements.concat(s.elements));
+  }
   // type () {
 
   // 	if (this.elements.length == 0) {
@@ -191,7 +194,7 @@ export class Script {
   // 	}
   // }
 
-  serialize() {
+  serialize(z) {
     let result = Buffer.from([]);
     this.elements.map(obj => {
       if (typeof obj === 'number') {
@@ -202,6 +205,10 @@ export class Script {
     });
     const total = encodeVarint(result.length);
     return Buffer.concat([total, result]);
+  }
+
+  evaluate(): boolean {
+    return true;
   }
 
   isP2pkhScriptPubkey(): boolean {
