@@ -194,7 +194,7 @@ export class Script {
   // 	}
   // }
 
-  serialize(z) {
+  serialize() {
     let result = Buffer.from([]);
     this.elements.map(obj => {
       if (typeof obj === 'number') {

@@ -180,7 +180,7 @@ export class Tx {
     //const signature = ecc.Signature.parse(txIn.derSignature());
     //const hashType = txIn.hashType();
     const z = this.sigHash(inputIndex);
-    const combinedScript = txIn.scriptSig + txIn.scriptPubkey(this.testnet);
+    const combinedScript = txIn.scriptSig.add(txIn.scriptPubkey(this.testnet));
     return combinedScript.evaluate(z);
   }
 
