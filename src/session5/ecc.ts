@@ -3,6 +3,7 @@ import { Readable } from 'stream';
 //https://dev.to/maurobringolf/a-neat-trick-to-compute-modulo-of-negative-numbers-111e
 var hash = require('hash.js');
 var helper = require('./helper');
+import { hash256 } from './helper';
 
 export class FieldElement {
   num: bigint;
@@ -530,7 +531,7 @@ export class S256Point extends ECCPoint {
       const prefix = Buffer.from([0x6f]);
       let arr = [prefix, h160];
       const raw = Buffer.concat(arr);
-      const checksum = Buffer.from(helper.doubleSha256(raw).slice(0, 8), 'hex');
+      const checksum = hash256(raw).slice(0, 4);
       const total = Buffer.concat([raw, checksum]);
       const address = helper.encodeBase58(total);
       return address;
@@ -538,7 +539,7 @@ export class S256Point extends ECCPoint {
       let prefix = Buffer.from([0x00]);
       let arr = [prefix, h160];
       const raw = Buffer.concat(arr);
-      const checksum = Buffer.from(helper.doubleSha256(raw).slice(0, 8), 'hex');
+      const checksum = hash256(raw).slice(0, 4);
       const total = Buffer.concat([raw, checksum]);
       const address = helper.encodeBase58(total);
       return address;
@@ -562,9 +563,9 @@ export class S256Point extends ECCPoint {
       '115792089237316195423570985008687907853269984665640564039457584007908834671663'
     );
     if (secBin[0] == 4) {
-      let x = new S256Field(BigInt('0x' + secBin.slice(0, 15).toString('hex')));
+      let x = new S256Field(BigInt('0x' + secBin.slice(1, 33).toString('hex')));
       let y = new S256Field(
-        BigInt('0x' + secBin.slice(15, 32).toString('hex'))
+        BigInt('0x' + secBin.slice(33, 65).toString('hex'))
       );
       return new S256Point(x, y);
     }

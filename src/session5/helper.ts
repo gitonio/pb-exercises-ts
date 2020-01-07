@@ -111,7 +111,7 @@ function invert(num: bigint, prime: bigint): bigint {
   return pow(num, prime - 2n, prime);
 }
 
-function hash160(b: Buffer): string {
+export function hash160(b: Buffer): Buffer {
   const sha = Buffer.from(
     hash
       .sha256()
@@ -119,13 +119,16 @@ function hash160(b: Buffer): string {
       .digest('hex'),
     'hex'
   );
-  return hash
-    .ripemd160()
-    .update(sha)
-    .digest('hex');
+  return Buffer.from(
+    hash
+      .ripemd160()
+      .update(sha)
+      .digest('hex'),
+    'hex'
+  );
 }
 
-function doubleSha256(b: Buffer): string {
+export function hash256(b: Buffer): Buffer {
   let sha1 = Buffer.from(
     hash
       .sha256()
@@ -133,10 +136,13 @@ function doubleSha256(b: Buffer): string {
       .digest('hex'),
     'hex'
   );
-  return hash
-    .sha256()
-    .update(sha1)
-    .digest('hex');
+  return Buffer.from(
+    hash
+      .sha256()
+      .update(sha1)
+      .digest('hex'),
+    'hex'
+  );
 }
 
 function encodeBase58(b: Buffer): string {
@@ -167,7 +173,7 @@ function encodeBase58(b: Buffer): string {
 }
 
 export function encodeBase58Checksum(b: Buffer): string {
-  const checksum = Buffer.from(doubleSha256(b).slice(0, 8), 'hex');
+  const checksum = hash256(b).slice(0, 4);
   const total = Buffer.concat([b, checksum]);
   return encodeBase58(total);
 }
@@ -185,18 +191,15 @@ export function decodeBase58(s: string): Buffer {
   let combined = intToBigEndian(num);
   let l = Buffer.byteLength(combined);
   if (l == 24) {
-    //combined = Buffer.concat([combined, Buffer.from([0x00])]);
-    console.log('inif');
     combined = Buffer.concat([Buffer.from([0x00]), combined]);
   }
   l = Buffer.byteLength(combined);
-  console.log(s, s.length, l, combined.toString('hex'), num);
   const checksum = combined.slice(l - 4, l);
-  const res = doubleSha256(combined.slice(0, l - 4));
-
-  if (res.slice(0, 8) != checksum.toString('hex')) {
+  const res = hash256(combined.slice(0, l - 4));
+  console.log(res.toString('hex').slice(0, 8), checksum.toString());
+  if (res.toString('hex').slice(0, 8) != checksum.toString('hex')) {
     throw new Error(
-      `bad address: ${checksum.toString('hex')} ${res.slice(0, 8)}`
+      `bad address: ${checksum.toString('hex')} ${res.slice(0, 4)}`
     );
   }
   return combined.slice(1, Buffer.byteLength(combined) - 4);
@@ -226,5 +229,5 @@ module.exports.mod = mod;
 module.exports.pow = pow;
 module.exports.invert = invert;
 module.exports.hash160 = hash160;
-module.exports.doubleSha256 = doubleSha256;
+module.exports.hash256 = hash256;
 module.exports.encodeBase58 = encodeBase58;

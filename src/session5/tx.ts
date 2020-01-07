@@ -4,6 +4,7 @@ var request = require('request');
 //var https = require('https');
 var helper = require('./helper');
 import { Script } from './script';
+import { hash256 } from './helper';
 //var request = require('sync-request');
 var ecc = require('./ecc');
 const fs = require('fs');
@@ -170,8 +171,8 @@ export class Tx {
       helper.intToLittleEndian(this.locktime, 4),
       helper.intToLittleEndian(1, 4)
     ]);
-    const s256 = helper.doubleSha256(Buffer.from(s));
-    return BigInt('0x' + s256);
+    const s256 = hash256(Buffer.from(s));
+    return BigInt('0x' + s256.toString('hex'));
   }
 
   verifyInput(inputIndex: number): boolean {
@@ -181,9 +182,18 @@ export class Tx {
     //const hashType = txIn.hashType();
     const z = this.sigHash(inputIndex);
     const combinedScript = txIn.scriptSig.add(txIn.scriptPubkey(this.testnet));
+    console.log('combi:', combinedScript);
     return combinedScript.evaluate(z);
   }
 
+  verify(): boolean {
+    if (this.fee() < 0) return false;
+    for (let index = 0; index < this.inputs.length; index++) {
+      if (!this.verifyInput(index)) return false;
+    }
+    return true;
+  }
+  /*
   signInput(inputIndex, privateKey, hashType) {
     const z = this.sigHash(inputIndex, hashType);
     const der = privateKey.sign(z).der();
@@ -194,7 +204,7 @@ export class Tx {
     this.inputs[inputIndex].scriptSig = scriptSig;
     return this.verifyInput(inputIndex);
   }
-  /*
+  
 	isCoinbase() {
 		if (this.inputs.length != 1) {
 			return false;

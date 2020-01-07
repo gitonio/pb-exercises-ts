@@ -57,11 +57,8 @@ describe('ScriptTest', function() {
 
   it('test_address', function() {
     const address1 = '1BenRpVUFK65JFWcQSuHnJKzc4M8ZP8Eqa';
-    //const address1 = 'mnrVtF8DWjMu839VW3rBfgYaAfKk8983Xf';
     let h160 = decodeBase58(address1);
-    //console.log(h160.toString('hex'));
     const p2pkhScriptPubkey = p2pkhScript(h160);
-    //console.log(p2pkhScriptPubkey);
     assert.equal(p2pkhScriptPubkey.address(), address1);
 
     const address2 = 'mrAjisaT4LXL5MzE81sfcDYKU3wqWSvf9q';

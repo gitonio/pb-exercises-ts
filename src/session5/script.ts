@@ -1,6 +1,8 @@
 var helper = require('./helper');
 import { Readable } from 'stream';
 import { encodeVarint, h160ToP2pkhAddress, h160ToP2shAddress } from './helper';
+import { isNumber } from 'util';
+import { OP_CODE_FUNCTIONS } from './op';
 const OP_CODES = {
   '0': 'OP_0',
   '76': 'OP_PUSHDATA1',
@@ -207,7 +209,50 @@ export class Script {
     return Buffer.concat([total, result]);
   }
 
-  evaluate(): boolean {
+  evaluate(z: bigint): boolean {
+    const commands = this.elements;
+    const stack: Buffer[] = [];
+    const altstack: Buffer[] = [];
+    while (commands.length > 0) {
+      const command = commands.shift();
+      console.log(command, commands.length, commands);
+      if (isNumber(command)) {
+        const operation = (OP_CODE_FUNCTIONS as any)[command];
+        console.log(operation);
+        console.log(stack);
+        if (command in [99, 100]) {
+          if (!operation(stack, commands)) {
+            console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
+            return false;
+          }
+        } else if (command in [107, 188]) {
+          if (!operation(stack, commands)) {
+            console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
+            return false;
+          }
+        } else if (command in [172, 173, 174, 175]) {
+          if (!operation(stack, altstack)) {
+            console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
+            return false;
+          }
+        } else {
+          if (!operation(stack)) {
+            console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
+            return false;
+          }
+        }
+      } else {
+        stack.push(command!);
+      }
+      if (stack.length == 0) {
+        console.log('0');
+        return false;
+      }
+      if (stack.pop()!.toString() == '') {
+        console.log('em');
+        return false;
+      }
+    }
     return true;
   }
 

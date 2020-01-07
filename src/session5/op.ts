@@ -1,4 +1,433 @@
-const OP_CODE_FUNCTIONS = {
+import { hash160, hash256 } from './helper';
+import { S256Point, Signature } from './ecc';
+
+function encode_num(num: number): Buffer {
+  if (num == 0) return Buffer.from([]);
+  let abs_num = Math.abs(num);
+  const negative = num < 0;
+  let result = Buffer.from([]);
+  while (abs_num) {
+    //result.append(abs_num & 0xff)
+    result = Buffer.concat([result, Buffer.from([abs_num & 0xff])]);
+    abs_num = abs_num >> 8;
+  }
+  //# if the top bit is set,
+  //# for negative numbers we ensure that the top bit is set
+  //# for positive numbers we ensure that the top bit is not set
+  if (result[-1] & 0x80) {
+    if (negative) {
+      //result.append(0x80)
+      result = Buffer.concat([result, Buffer.from([0x80])]);
+    } else {
+      result = Buffer.concat([result, Buffer.from([0x00])]);
+    }
+  } else if (negative) {
+    result[-1] |= 0x80;
+  }
+  return result;
+}
+
+export function decode_num(element: Buffer): number {
+  /*
+  def decode_num(element):
+    if element == b'':
+        return 0
+    # reverse for big endian
+    big_endian = element[::-1]
+    # top bit being 1 means it's negative
+    if big_endian[0] & 0x80:
+        negative = True
+        result = big_endian[0] & 0x7f
+    else:
+        negative = False
+        result = big_endian[0]
+    for c in big_endian[1:]:
+        result <<= 8
+        result += c
+    if negative:
+        return -result
+    else:
+        return result
+
+  */
+  if (element.toString() == '') return 0;
+  element.reverse();
+  const rv = element.slice(0, element.length).reduce((acc, cv) => {
+    acc = acc << 8;
+    acc = acc + cv;
+    return acc;
+  });
+
+  return rv;
+}
+
+function op_0(stack: Buffer[]): boolean {
+  stack.push(encode_num(0));
+  return true;
+}
+
+function op_1(stack: Buffer[]): boolean {
+  stack.push(encode_num(1));
+  return true;
+}
+
+function op_1negate(stack: Buffer[]): boolean {
+  stack.push(encode_num(-1));
+  return true;
+}
+
+function op_2(stack: Buffer[]): boolean {
+  stack.push(encode_num(2));
+  return true;
+}
+
+function op_3(stack: Buffer[]): boolean {
+  stack.push(encode_num(3));
+  return true;
+}
+
+function op_4(stack: Buffer[]): boolean {
+  stack.push(encode_num(4));
+  return true;
+}
+
+function op_5(stack: Buffer[]): boolean {
+  stack.push(encode_num(5));
+  return true;
+}
+
+function op_6(stack: Buffer[]): boolean {
+  stack.push(encode_num(6));
+  return true;
+}
+
+function op_7(stack: Buffer[]): boolean {
+  stack.push(encode_num(7));
+  return true;
+}
+
+function op_8(stack: Buffer[]): boolean {
+  stack.push(encode_num(8));
+  return true;
+}
+
+function op_9(stack: Buffer[]): boolean {
+  stack.push(encode_num(9));
+  return true;
+}
+
+function op_10(stack: Buffer[]): boolean {
+  stack.push(encode_num(10));
+  return true;
+}
+
+function op_11(stack: Buffer[]): boolean {
+  stack.push(encode_num(11));
+  return true;
+}
+
+function op_12(stack: Buffer[]): boolean {
+  stack.push(encode_num(12));
+  return true;
+}
+
+function op_13(stack: Buffer[]): boolean {
+  stack.push(encode_num(13));
+  return true;
+}
+
+function op_14(stack: Buffer[]): boolean {
+  stack.push(encode_num(14));
+  return true;
+}
+
+function op_15(stack: Buffer[]): boolean {
+  stack.push(encode_num(15));
+  return true;
+}
+
+function op_16(stack: Buffer[]): boolean {
+  stack.push(encode_num(16));
+  return true;
+}
+
+function op_nop(stack: Buffer[]): boolean {
+  return true;
+}
+
+function op_if(stack: Buffer[]): boolean {
+  stack.push(encode_num(1));
+  return true;
+}
+
+function op_notif(stack: Buffer[]): boolean {
+  stack.push(encode_num(1));
+  return true;
+}
+
+function op_verify(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  if (decode_num(element!) == 0) return false;
+  return true;
+}
+
+export function op_hash160(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  const h160 = hash160(element as Buffer);
+  stack.push(h160);
+  return true;
+}
+
+function op_return(stack: Buffer[]): boolean {
+  return false;
+}
+
+function op_toaltstack(stack: Buffer[], altstack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  altstack.push(stack.pop()!);
+  return true;
+}
+
+function op_fromaltstack(stack: Buffer[], altstack: Buffer[]): boolean {
+  if (altstack.length < 1) return false;
+  stack.push(altstack.pop()!);
+  return true;
+}
+
+function op_2drop(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  stack.pop();
+  stack.pop();
+  return true;
+}
+
+function op_2dup(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  stack = stack.concat(stack.slice(stack.length - 2, stack.length));
+  return true;
+}
+
+function op_3dup(stack: Buffer[]): boolean {
+  if (stack.length < 3) return false;
+  stack = stack.concat(stack.slice(stack.length - 3, stack.length));
+  return true;
+}
+
+function op_2over(stack: Buffer[]): boolean {
+  if (stack.length < 4) return false;
+  stack = stack.concat(stack.slice(stack.length - 4, stack.length - 2));
+  return true;
+}
+
+function op_2rot(stack: Buffer[]): boolean {
+  if (stack.length < 6) return false;
+  stack = stack.concat(stack.slice(stack.length - 6, stack.length - 4));
+  return true;
+}
+
+function op_2swap(stack: Buffer[]): boolean {
+  if (stack.length < 4) return false;
+  stack = stack.concat(
+    stack.slice(stack.length - 2, stack.length),
+    stack.slice(stack.length - 4, stack.length - 2)
+  );
+  return true;
+}
+
+function op_ifdup(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  if (decode_num(stack[stack.length]) != 0) stack.push(stack[stack.length]);
+  return true;
+}
+
+export function op_depth(stack: Buffer[]): boolean {
+  stack.push(encode_num(stack.length));
+  return true;
+}
+
+export function op_drop(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  stack.pop();
+  return true;
+}
+
+function op_dup(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  stack.push(stack[stack.length]);
+  return true;
+}
+
+function op_nip(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  stack.splice(stack.length - 1, 1);
+  return true;
+}
+
+function op_over(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  stack.push(stack[stack.length - 2]);
+  return true;
+}
+
+function op_pick(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const n = decode_num(stack.pop()!);
+  if (stack.length < n + 1) return false;
+
+  stack.push(stack[stack.length - n - 1]);
+  return true;
+}
+
+function op_roll(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const n = decode_num(stack.pop()!);
+  if (stack.length < n + 1) return false;
+  if (n == 0) return true;
+  stack = stack.concat(stack, stack.splice(stack.length - n - 1, 1));
+  return true;
+}
+
+function op_rot(stack: Buffer[]): boolean {
+  if (stack.length < 3) return false;
+  stack = stack.concat(stack, stack.splice(stack.length - 3, 1));
+  return true;
+}
+
+function op_swap(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  stack = stack.concat(stack, stack.splice(stack.length - 2, 1));
+  return true;
+}
+
+function op_tuck(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  stack.concat(
+    stack.slice(0, stack.length - 3),
+    stack[stack.length],
+    stack.slice(stack.length - 1, stack.length)
+  );
+  return true;
+}
+
+function op_size(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  stack.push(encode_num(stack[stack.length].length));
+  return true;
+}
+
+function op_equal(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = stack.pop();
+  const element2 = stack.pop();
+  if (element1 == element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_equalverify(stack: Buffer[]): boolean {
+  return op_equal(stack) && op_verify(stack);
+}
+
+function op_1add(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = decode_num(stack.pop()!);
+  stack.push(encode_num(element + 1));
+  return true;
+}
+
+function op_1sub(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = decode_num(stack.pop()!);
+  stack.push(encode_num(element - 1));
+  return true;
+}
+
+function op_negate(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = decode_num(stack.pop()!);
+  stack.push(encode_num(-element));
+  return true;
+}
+
+function op_abs(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = decode_num(stack.pop()!);
+  if (element < 1) stack.push(encode_num(-element));
+  else stack.push(encode_num(element));
+  return true;
+}
+
+function op_not(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = decode_num(stack.pop()!);
+  if (element < 1) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_hash256(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  const h256 = hash256(element!);
+  stack.push(element!);
+  return true;
+}
+
+export function op_checksig(stack: Buffer[], z: bigint): boolean {
+  //# check to see if there's at least 2 elements
+  if (stack.length < 2) return false;
+  //# get the sec_pubkey with stack.pop()
+  const sec_pubkey: Buffer = stack.pop() as Buffer;
+  //# get the der_signature with stack.pop()[:-1] (last byte is removed)
+  const ds: Buffer = stack.pop() as Buffer;
+  const der_signature = ds.slice(0, ds.length - 1);
+  //# parse the sec format pubkey with S256Point
+  const point = S256Point.parse(sec_pubkey);
+  //# parse the der format signature with Signature
+  const sig = Signature.parse(der_signature);
+  //# verify using the point, z and signature
+  //# if verified add encode_num(1) to the end, otherwise encode_num(0)
+  if (point.verify(z, sig)) {
+    stack.push(encode_num(1));
+  } else {
+    stack.push(encode_num(0));
+  }
+  return true;
+}
+
+function op_checksigverify(stack: Buffer[], z: bigint): boolean {
+  return op_checksig(stack, z) && op_verify(stack);
+}
+
+export function op_checkmultisig(stack: Buffer[], z: bigint): boolean {
+  if (stack.length < 1) return false;
+  const n = decode_num(stack.pop()!);
+  if (stack.length < n + 1) return false;
+  let sec_pubkeys: Buffer[] = [];
+  for (let index = 0; index < n; index++) {
+    sec_pubkeys.push(stack.pop()!);
+  }
+  const m = decode_num(stack.pop()!);
+  if (stack.length < m + 1) return false;
+  let der_signatures: Buffer[] = [];
+  for (let index = 0; index < m; index++) {
+    let der_signature = stack.pop();
+    der_signature = der_signature!.slice(0, der_signature!.length - 1);
+    der_signatures.push(der_signature!);
+  }
+  stack.pop();
+  console.log(der_signatures);
+  const points = sec_pubkeys.map(sec => S256Point.parse(sec));
+  const sigs = der_signatures.map(der => Signature.parse(der));
+
+  sigs.map(sig => points.map(point => point.verify(z, sig)));
+  stack.push(encode_num(1));
+  return true;
+}
+
+export const OP_CODE_FUNCTIONS = {
   0: op_0,
   79: op_1negate,
   81: op_1,
