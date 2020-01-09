@@ -172,14 +172,6 @@ function op_verify(stack: Buffer[]): boolean {
   return true;
 }
 
-export function op_hash160(stack: Buffer[]): boolean {
-  if (stack.length < 1) return false;
-  const element = stack.pop();
-  const h160 = hash160(element as Buffer);
-  stack.push(h160);
-  return true;
-}
-
 function op_return(stack: Buffer[]): boolean {
   return false;
 }
@@ -255,7 +247,7 @@ export function op_drop(stack: Buffer[]): boolean {
 
 function op_dup(stack: Buffer[]): boolean {
   if (stack.length < 1) return false;
-  stack.push(stack[stack.length]);
+  stack.push(stack[stack.length - 1]);
   return true;
 }
 
@@ -321,7 +313,8 @@ function op_equal(stack: Buffer[]): boolean {
   if (stack.length < 2) return false;
   const element1 = stack.pop();
   const element2 = stack.pop();
-  if (element1 == element2) stack.push(encode_num(1));
+  if (element1!.toString('hex') == element2!.toString('hex'))
+    stack.push(encode_num(1));
   else stack.push(encode_num(0));
   return true;
 }
@@ -364,6 +357,189 @@ function op_not(stack: Buffer[]): boolean {
   const element = decode_num(stack.pop()!);
   if (element < 1) stack.push(encode_num(1));
   else stack.push(encode_num(0));
+  return true;
+}
+
+function op_0notequal(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = decode_num(stack.pop()!);
+  if (element == 0) stack.push(encode_num(0));
+  else stack.push(encode_num(1));
+  return true;
+}
+
+function op_add(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  stack.push(encode_num(element1 + element2));
+  return true;
+}
+
+function op_sub(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  stack.push(encode_num(element1 - element2));
+  return true;
+}
+
+function op_booland(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 && element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+  return true;
+}
+
+function op_boolor(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 || element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_numequal(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 == element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_numequalverify(stack: Buffer[]): boolean {
+  return op_numequal(stack) && op_verify(stack);
+}
+
+function op_numnotequal(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 == element2) stack.push(encode_num(0));
+  else stack.push(encode_num(1));
+  return true;
+}
+
+function op_lessthan(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 > element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_greaterthan(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 < element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_lessthanorequal(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 >= element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_greaterthanorequal(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 <= element2) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_min(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 < element2) stack.push(encode_num(element1));
+  else stack.push(encode_num(element2));
+  return true;
+}
+
+function op_max(stack: Buffer[]): boolean {
+  if (stack.length < 2) return false;
+  const element1 = decode_num(stack.pop()!);
+  const element2 = decode_num(stack.pop()!);
+  if (element1 > element2) stack.push(encode_num(element1));
+  else stack.push(encode_num(element2));
+  return true;
+}
+
+function op_within(stack: Buffer[]): boolean {
+  if (stack.length < 3) return false;
+  const maximum = decode_num(stack.pop()!);
+  const minimum = decode_num(stack.pop()!);
+  const element = decode_num(stack.pop()!);
+  if (element >= minimum && element < maximum) stack.push(encode_num(1));
+  else stack.push(encode_num(0));
+  return true;
+}
+
+function op_ripemd160(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  stack.push(
+    Buffer.from(
+      hash
+        .ripemd160()
+        .update(element)
+        .digest('hex'),
+      'hex'
+    )
+  );
+
+  return true;
+}
+
+function op_sha1(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  stack.push(
+    Buffer.from(
+      hash
+        .sha1()
+        .update(element)
+        .digest('hex'),
+      'hex'
+    )
+  );
+  return true;
+}
+
+function op_sha256(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  stack.push(
+    Buffer.from(
+      hash
+        .sha256()
+        .update(element)
+        .digest('hex'),
+      'hex'
+    )
+  );
+  return true;
+}
+
+export function op_hash160(stack: Buffer[]): boolean {
+  if (stack.length < 1) return false;
+  const element = stack.pop();
+  const h160 = hash160(element as Buffer);
+  stack.push(h160);
   return true;
 }
 
@@ -418,12 +594,31 @@ export function op_checkmultisig(stack: Buffer[], z: bigint): boolean {
     der_signatures.push(der_signature!);
   }
   stack.pop();
-  console.log(der_signatures);
   const points = sec_pubkeys.map(sec => S256Point.parse(sec));
   const sigs = der_signatures.map(der => Signature.parse(der));
 
   sigs.map(sig => points.map(point => point.verify(z, sig)));
   stack.push(encode_num(1));
+  return true;
+}
+
+function op_checkmultisigverify(stack: Buffer[], z: bigint): boolean {
+  return op_checkmultisig(stack, z) && op_verify(stack);
+}
+
+function op_checklocktimeverify(
+  stack: Buffer[],
+  locktime: bigint,
+  sequence: bigint
+): boolean {
+  return true;
+}
+
+function op_checksequenceverify(
+  stack: Buffer[],
+  version: bigint,
+  sequence: bigint
+): boolean {
   return true;
 }
 

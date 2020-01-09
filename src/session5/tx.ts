@@ -5,6 +5,7 @@ var request = require('request');
 var helper = require('./helper');
 import { Script } from './script';
 import { hash256 } from './helper';
+import { PrivateKey } from '../session3/ecc';
 //var request = require('sync-request');
 var ecc = require('./ecc');
 const fs = require('fs');
@@ -30,7 +31,7 @@ export class TxFetcher {
       let readable = new Readable();
       readable.push(raw);
       readable.push(null);
-      let tx = Tx.parse(readable);
+      let tx = Tx.parse(readable, testnet);
       this.cache[txId] = tx;
     }
     return this.cache[txId];
@@ -48,8 +49,12 @@ export class TxFetcher {
       readable = new Readable();
       readable.push(Buffer.from(obj.rawHex, 'hex'));
       readable.push(null);
-      this.cache[obj.txId] = Tx.parse(readable);
+      this.cache[obj.txId] = Tx.parse(readable, false);
     });
+  }
+
+  static dumpCache(filename: string): void {
+    //TODO ADD CODE
   }
 }
 
@@ -62,7 +67,7 @@ export class Tx {
     public testnet = false
   ) {}
 
-  static parse(s: Readable) {
+  static parse(s: Readable, testnet: boolean) {
     let x = s.read(4);
     const version = helper.littleEndianToInt(x);
     //this.version = version
@@ -77,7 +82,7 @@ export class Tx {
       outputs.push(TxOut.parse(s));
     }
     const locktime = helper.littleEndianToInt(s.read(4));
-    return new Tx(version, inputs, outputs, locktime);
+    return new Tx(version, inputs, outputs, locktime, testnet);
   }
 
   serialize(): Buffer {
@@ -182,7 +187,6 @@ export class Tx {
     //const hashType = txIn.hashType();
     const z = this.sigHash(inputIndex);
     const combinedScript = txIn.scriptSig.add(txIn.scriptPubkey(this.testnet));
-    console.log('combi:', combinedScript);
     return combinedScript.evaluate(z);
   }
 
@@ -193,18 +197,19 @@ export class Tx {
     }
     return true;
   }
-  /*
-  signInput(inputIndex, privateKey, hashType) {
-    const z = this.sigHash(inputIndex, hashType);
+
+  signInput(inputIndex: number, privateKey: PrivateKey): boolean {
+    const z = this.sigHash(inputIndex);
     const der = privateKey.sign(z).der();
-    const sig = Buffer.concat([der, Buffer.from([hashType])]);
-    const sec = privateKey.point.sec();
-    const ss = [sig, sec];
-    const scriptSig = new script.Script(ss);
+    const sig = Buffer.concat([der, Buffer.from([0x01])]);
+    const sec = privateKey.point.sec()!;
+    const ss: (number | Buffer)[] = [sig, sec];
+    const scriptSig = new Script(ss);
     this.inputs[inputIndex].scriptSig = scriptSig;
     return this.verifyInput(inputIndex);
   }
-  
+
+  /*
 	isCoinbase() {
 		if (this.inputs.length != 1) {
 			return false;
@@ -376,7 +381,7 @@ TxIn.prototype.toString = function() {
   return `${this.prevTx.toString()}:${this.prevIndex}`;
 };
 
-class TxOut {
+export class TxOut {
   constructor(public amount: number, public scriptPubkey: Script) {}
 
   static parse(s: Readable) {

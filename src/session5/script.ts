@@ -211,31 +211,32 @@ export class Script {
 
   evaluate(z: bigint): boolean {
     const commands = this.elements;
-    const stack: Buffer[] = [];
+    let stack: Buffer[] = [];
     const altstack: Buffer[] = [];
     while (commands.length > 0) {
       const command = commands.shift();
-      console.log(command, commands.length, commands);
       if (isNumber(command)) {
         const operation = (OP_CODE_FUNCTIONS as any)[command];
-        console.log(operation);
-        console.log(stack);
-        if (command in [99, 100]) {
+        if ([99, 100].indexOf(command) >= 0) {
+          //console.log('command:', command);
           if (!operation(stack, commands)) {
             console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
             return false;
           }
-        } else if (command in [107, 188]) {
-          if (!operation(stack, commands)) {
-            console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
-            return false;
-          }
-        } else if (command in [172, 173, 174, 175]) {
+        } else if ([107, 188].indexOf(command) >= 0) {
+          //console.log('command:', command);
           if (!operation(stack, altstack)) {
             console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
             return false;
           }
+        } else if ([172, 173, 174, 175].indexOf(command) >= 0) {
+          //console.log('command:', command, stack);
+          if (!operation(stack, z)) {
+            console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
+            return false;
+          }
         } else {
+          //console.log('command:', command);
           if (!operation(stack)) {
             console.log(`bad op: ${(OP_CODE_FUNCTIONS as any)[command]}`);
             return false;
@@ -244,15 +245,14 @@ export class Script {
       } else {
         stack.push(command!);
       }
-      if (stack.length == 0) {
-        console.log('0');
-        return false;
-      }
-      if (stack.pop()!.toString() == '') {
-        console.log('em');
-        return false;
-      }
     }
+    if (stack.length == 0) {
+      return false;
+    }
+    if (stack.pop()!.toString() == '') {
+      return false;
+    }
+
     return true;
   }
 

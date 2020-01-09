@@ -196,7 +196,6 @@ export function decodeBase58(s: string): Buffer {
   l = Buffer.byteLength(combined);
   const checksum = combined.slice(l - 4, l);
   const res = hash256(combined.slice(0, l - 4));
-  console.log(res.toString('hex').slice(0, 8), checksum.toString());
   if (res.toString('hex').slice(0, 8) != checksum.toString('hex')) {
     throw new Error(
       `bad address: ${checksum.toString('hex')} ${res.slice(0, 4)}`

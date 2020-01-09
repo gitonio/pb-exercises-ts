@@ -1,13 +1,17 @@
 var { assert, expect } = require('chai');
-import { Tx, TxIn, TxFetcher } from './tx';
-import { Script } from './script';
+import { Tx, TxIn, TxOut, TxFetcher } from './tx';
+import { Script, p2pkhScript } from './script';
+import { PrivateKey } from '../session5/ecc';
+import { decodeBase58 } from './helper';
 var Readable = require('stream').Readable;
 var ecc = require('./ecc');
 var helper = require('./helper');
 
 describe('TxTest', function() {
-  TxFetcher.loadCache('./src/session5/tx.cache');
+  this.timeout(5000);
 
+  TxFetcher.loadCache('./src/session5/tx.cache');
+  /*
   const rawTx = Buffer.from(
     '0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600',
     'hex'
@@ -115,10 +119,34 @@ describe('TxTest', function() {
   });
 
   it('test_verify_p2pkh', function() {
-    const tx = TxFetcher.fetch(
+    let tx = TxFetcher.fetch(
       '452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03'
     );
     console.log(tx);
     assert.ok(tx.verify());
+
+    TxFetcher.fetch(
+      '5418099cc755cb9dd3ebc6cf1a7888ad53a1a3beb5a025bce89eb1bf7f1650a2',
+      true
+    );
+    console.log(tx);
+    assert.ok(tx.verify());
+  });
+*/
+  it('test_sign_input', function() {
+    const private_key = new PrivateKey(8675309n);
+    const txIns = [];
+    const prevTx = Buffer.from(
+      '0025bc3c0fa8b7eb55b9437fdbd016870d18e0df0ace7bc9864efc38414147c8',
+      'hex'
+    );
+    txIns.push(new TxIn(prevTx, 0));
+    const txOuts = [];
+    let h160 = decodeBase58('mzx5YhAH9kNHtcN481u6WkjeHjYtVeKVh2');
+    txOuts.push(new TxOut(0.99 * 100000000, p2pkhScript(h160)));
+    h160 = decodeBase58('mnrVtF8DWjMu839VW3rBfgYaAfKk8983Xf');
+    txOuts.push(new TxOut(0.1 * 100000000, p2pkhScript(h160)));
+    const tx = new Tx(1, txIns, txOuts, 0, true);
+    assert.ok(tx.signInput(0, private_key));
   });
 });

@@ -513,7 +513,6 @@ export class S256Point extends ECCPoint {
         //let nay = Buffer.alloc(8)
         //			let nax = this.x.num.toBuffer('be')
         //			let nay = this.y.num.toBuffer('be')
-        //console.log(this.x.num)
         //nax.writeBigUInt64BE(this.x.num,0)
         //nay.writeBigUInt64BE(this.y.num, 0)
         let nax = Buffer.from(this.x.num.toString(16), 'hex');
@@ -615,10 +614,10 @@ export const N = BigInt(
 export class Signature {
   constructor(public r: bigint, public s: bigint) {}
 
-  der() {
+  der(): Buffer {
     let rbin: Buffer = helper.intToBigEndian(this.r);
     let pref = Buffer.from([]);
-    if (rbin[0] > 128) {
+    if (rbin[0] >= 128) {
       pref = Buffer.from([0]);
       rbin = Buffer.concat([pref, rbin]);
     }
@@ -627,7 +626,7 @@ export class Signature {
     let result = Buffer.concat([pref, rbin]);
 
     let sbin = helper.intToBigEndian(this.s);
-    if (sbin[0] > 128) {
+    if (sbin[0] >= 128) {
       pref = Buffer.from([0]);
       sbin = Buffer.concat([pref, sbin]);
     }
